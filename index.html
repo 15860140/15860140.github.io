@@ -1,350 +1,475 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>象棋</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>金科一甲象棋｜完整版</title>
 <style>
-*{box-sizing:border-box}
-body{
-  margin:0;padding:20px;
-  font-family:Arial,"Microsoft JhengHei",sans-serif;
-  background:#f4ead5;color:#3c2415;text-align:center
+:root {
+  --wood: #e8bd70;
+  --wood-light: #f8dfa0;
+  --ink: #6c421d;
+  --paper: #fffaf0;
+  --red: #d52b2b;
+  --black: #292521;
 }
-h1{margin:5px 0 15px}
-.game{max-width:650px;margin:auto}
-canvas{
-  width:100%;max-width:540px;height:auto;
-  background:#f4d99a;border:3px solid #75451f;
-  border-radius:5px;touch-action:manipulation
+
+* {
+  box-sizing: border-box;
 }
-.controls{
-  display:flex;justify-content:center;flex-wrap:wrap;
-  gap:8px;margin:12px 0
+
+body {
+  margin: 0;
+  padding: 22px 10px 34px;
+  text-align: center;
+  font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+  color: #f8e5b5;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    #6b421f 0%,
+    #2a180d 75%,
+    #170e08 100%
+  );
+  min-height: 100vh;
 }
-button,select{
-  padding:9px 13px;border:1px solid #8b5a2b;
-  border-radius:6px;background:#fff8e8;
-  font-size:15px;cursor:pointer
+
+h1 {
+  font-size: clamp(25px, 5vw, 36px);
+  margin: 8px 0 5px;
+  letter-spacing: 4px;
+  color: #f9d77f;
+  text-shadow: 0 2px #321706, 0 0 14px #d9a64b;
 }
-button:hover{background:#ead1a1}
-#status{font-weight:bold;margin:12px}
-#history{
-  text-align:left;background:#fff8e8;padding:12px;
-  border-radius:8px;min-height:50px;white-space:pre-wrap
+
+.subtitle {
+  color: #e4c18a;
+  font-size: 13px;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+.panel,
+.history {
+  width: min(96vw, 760px);
+  margin: 0 auto 14px;
+  background: linear-gradient(145deg, #29180d, #120d08 70%, #34200f);
+  border: 2px solid #9c6a2b;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 10px 28px #0008, inset 0 0 0 1px #f4d28b35;
+  color: #f8e9c9;
+}
+
+.mode {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-weight: 700;
+  color: #f7e5c2;
+}
+
+.mode label {
+  cursor: pointer;
+}
+
+#status {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 8px;
+  color: #ffe0a0;
+}
+
+.board-wrap {
+  width: min(94vw, 620px);
+  margin: 0 auto;
+  padding: 10px;
+  background: linear-gradient(
+    135deg,
+    #5a3215,
+    #e8b85b 15%,
+    #f9dc8b 35%,
+    #b77a2d 65%,
+    #f0c66e 85%,
+    #5a3215
+  );
+  border: 5px solid #6b3a12;
+  box-shadow: 0 14px 34px #0009,
+    inset 0 0 0 2px #ffe6a0,
+    inset 0 0 0 5px #9d6525;
+  border-radius: 12px;
+}
+
+/* 9 條直線、10 條橫線，形成 90 個交叉點 */
+#board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 8 / 9;
+  background-color: #efc66e;
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(12.5% - 1px),
+      #70471f calc(12.5% - 1px),
+      #70471f 12.5%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(11.111111% - 1px),
+      #70471f calc(11.111111% - 1px),
+      #70471f 11.111111%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      #9c652110 0,
+      #9c652110 1px,
+      transparent 1px,
+      transparent 5px
+    ),
+    linear-gradient(90deg, #e9b958, #f9db8a 48%, #e8b958);
+  border: 2px solid #71451e;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.cell {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12.5%;
+  height: 11.111%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+}
+
+/* 楚河漢界 */
+.river-text {
+  position: absolute;
+  z-index: 2;
+  top: 44.444%;
+  left: 0;
+  width: 100%;
+  height: 11.112%;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  color: #6b3c14;
+  font-family: "DFKai-SB", "標楷體", serif;
+  font-weight: bold;
+  font-size: clamp(15px, 3.7vw, 24px);
+  letter-spacing: 4px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    #efc66ef2,
+    #f7d989f7,
+    #efc66ef2
+  );
+  text-shadow: 0 1px #fff4;
+}
+
+/* 九宮斜線 */
+.palace {
+  position: absolute;
+  left: 37.5%;
+  width: 25%;
+  height: 22.222%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.palace.top {
+  top: 0;
+}
+
+.palace.bottom {
+  bottom: 0;
+}
+
+.palace line {
+  stroke: #795027;
+  stroke-width: 1.2;
+}
+
+/* 棋子：不透明背景覆蓋棋盤線 */
+.piece {
+  position: relative;
+  z-index: 5;
+  isolation: isolate;
+  width: min(10vw, 56px);
+  max-width: 92%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "DFKai-SB", "標楷體", "KaiTi", serif;
+  font-size: clamp(17px, 4.1vw, 31px);
+  font-weight: bold;
+  background: radial-gradient(
+    circle at 30% 22%,
+    #fffef7 0%,
+    #fff9e7 48%,
+    #f1dfb7 72%,
+    #c8a66a 100%
+  );
+  background-color: #fff5dc;
+  opacity: 1;
+  border: 2px solid #9a6a2e;
+  box-shadow:
+    0 3px 0 #603813,
+    0 6px 9px #321a0d80,
+    inset 0 0 0 2px #fff9e9,
+    inset 0 -4px 6px #a77a3c70;
+  user-select: none;
+  transition: transform .12s, box-shadow .12s;
+}
+
+.piece.red {
+  color: #c51f1f;
+  border-color: #b66b35;
+  text-shadow: 0 1px #fff3;
+}
+
+.piece.black {
+  color: #211b15;
+  border-color: #9a6a2e;
+}
+
+.selected .piece {
+  outline: 3px solid #46c8ff;
+  outline-offset: 1px;
+  transform: scale(1.06);
+  z-index: 8;
+}
+
+.target:after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 23%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #218b52;
+  opacity: .95;
+  z-index: 6;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px #fff8;
+}
+
+.target.capture:after {
+  width: min(10vw, 56px);
+  background: #fff2;
+  border: 3px dashed #d52e2e;
+  z-index: 6;
+}
+
+.last-from .piece,
+.last-to .piece {
+  box-shadow:
+    0 0 0 3px #f6c449,
+    0 6px 9px #321a0d80,
+    inset 0 0 0 2px #fff8;
+}
+
+#message {
+  min-height: 24px;
+  font-weight: 700;
+  margin: 12px 0 4px;
+  color: #ffe0a0;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 10px auto;
+}
+
+button,
+select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid #c28b3c;
+  border-radius: 9px;
+  padding: 10px 13px;
+  background: linear-gradient(#6e451f, #301a0b);
+  color: #fff1ce;
+  cursor: pointer;
+  box-shadow: 0 3px 7px #0006;
+  transition: filter .15s, transform .15s;
+}
+
+button:hover {
+  filter: brightness(1.3);
+  transform: translateY(-1px);
+}
+
+button:disabled,
+select:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.secondary {
+  background: linear-gradient(#a17d51, #795735);
+}
+
+.meta {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #e3c28c;
+  margin-top: 10px;
+}
+
+.history {
+  line-height: 1.85;
+  margin: 14px auto;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow: auto;
+  font-size: 14px;
+}
+
+.history b {
+  color: #ffe0a0;
+}
+
+.note {
+  max-width: 640px;
+  margin: 14px auto;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #e3c28c;
+}
+
+input[type="radio"] {
+  accent-color: #e7b34f;
+}
+
+@media (min-width: 900px) {
+  .piece {
+    width: min(6vw, 60px);
+  }
+}
+
+@media (max-width: 390px) {
+  body {
+    padding: 14px 5px 24px;
+  }
+
+  .board-wrap {
+    padding: 6px;
+    border-width: 4px;
+  }
+
+  .piece {
+    width: 9.5vw;
+    font-size: clamp(16px, 4.5vw, 23px);
+    border-width: 1.5px;
+  }
+
+  .controls button {
+    padding: 9px 10px;
+  }
+
+  .panel {
+    padding: 10px;
+  }
 }
 </style>
 </head>
 <body>
-<div class="game">
-<h1>🏮 象棋</h1>
-<canvas id="board" width="540" height="600"></canvas>
-<div id="status">紅方先行</div>
 
-<div class="controls">
-  <select id="difficulty">
-    <option value="1">簡單</option>
-    <option value="2" selected>普通</option>
-    <option value="3">困難</option>
-  </select>
-  <button onclick="newGame()">重新開始</button>
-  <button onclick="undo()">悔棋</button>
-  <button onclick="flipBoard()">翻轉棋盤</button>
-  <button onclick="hint()">提示</button>
+<h1>🏮 金科一甲象棋</h1>
+<div class="subtitle">完整走棋判定・人機對弈・棋譜紀錄</div>
+
+<div class="panel">
+  <div class="mode">
+    <label>
+      <input type="radio" name="mode" value="ai" checked>
+      單人對弈（紅方對電腦）
+    </label>
+    <label>
+      <input type="radio" name="mode" value="pvp">
+      雙人同屏
+    </label>
+  </div>
+
+  <div id="status">紅方先行</div>
+
+  <div class="board-wrap">
+    <div id="board">
+      <svg class="palace top" viewBox="0 0 90 90" preserveAspectRatio="none">
+        <line x1="0" y1="0" x2="90" y2="90"/>
+        <line x1="90" y1="0" x2="0" y2="90"/>
+      </svg>
+
+      <svg class="palace bottom" viewBox="0 0 90 90" preserveAspectRatio="none">
+        <line x1="0" y1="0" x2="90" y2="90"/>
+        <line x1="90" y1="0" x2="0" y2="90"/>
+      </svg>
+
+      <div class="river-text">
+        <span>楚 河</span>
+        <span>漢 界</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="message">紅方先行，點擊棋子查看合法落點。</div>
+
+  <div class="controls">
+    <label>
+      電腦難度
+      <select id="difficulty">
+        <option value="1">入門</option>
+        <option value="2" selected>普通</option>
+        <option value="3">困難</option>
+        <option value="4">專家</option>
+      </select>
+    </label>
+
+    <button id="restart">重新開始</button>
+    <button id="undo">悔棋</button>
+    <button id="hint">提示棋步</button>
+    <button id="flip" class="secondary">翻轉棋盤</button>
+    <button id="export" class="secondary">匯出棋譜</button>
+  </div>
+
+  <div class="meta">
+    <span id="move-count">回合：0</span>
+    <span id="think-info">AI：待命</span>
+    <span id="check-info">局面：正常</span>
+  </div>
 </div>
 
-<h3>棋譜紀錄</h3>
-<div id="history">尚未開始</div>
+<div class="history" id="history">
+  <b>棋譜</b><br>尚未開始
+</div>
+
+<div class="note">
+  支援車、馬、炮、相／象、仕／士、帥／將、兵／卒的基本合法走法，
+  包含馬腿、象眼、炮架、過河、九宮、將帥照面與不得讓己方將帥受攻擊。
+  棋譜採傳統記譜方式，包含將軍、將死、困斃、三次重複局面及連續
+  120 半回合未吃子和棋判定。長將、長捉等正式競賽裁判規則較複雜，
+  本程式以一般休閒對弈規則處理。
 </div>
 
 <script>
-const canvas=document.getElementById("board");
-const ctx=canvas.getContext("2d");
-const N=9, M=10, step=60, ox=30, oy=30;
-
-const initial=[
- ["車","馬","象","士","將","士","象","馬","車"],
- ["","","","","","","","",""],
- ["","炮","","","","","","炮",""],
- ["卒","","卒","","卒","","卒","","卒"],
- ["","","","","","","","",""],
- ["","","","","","","","",""],
- ["兵","","兵","","兵","","兵","","兵"],
- ["","砲","","","","","","砲",""],
- ["","","","","","","","",""],
- ["俥","傌","相","仕","帥","仕","相","傌","俥"]
-];
-
-// 使用標準紅黑棋子配置
-function startBoard(){
- const b=Array.from({length:10},()=>Array(9).fill(null));
- const back=["R","N","B","A","K","A","B","N","R"];
- for(let x=0;x<9;x++){
-  b[0][x]={c:"b",t:back[x]};
-  b[9][x]={c:"r",t:back[x]};
- }
- b[2][1]={c:"b",t:"C"}; b[2][7]={c:"b",t:"C"};
- b[7][1]={c:"r",t:"C"}; b[7][7]={c:"r",t:"C"};
- for(let x=0;x<9;x+=2){
-  b[3][x]={c:"b",t:"P"};
-  b[6][x]={c:"r",t:"P"};
- }
- return b;
-}
-const names={
- K:{r:"帥",b:"將"},A:{r:"仕",b:"士"},
- B:{r:"相",b:"象"},N:{r:"傌",b:"馬"},
- R:{r:"俥",b:"車"},C:{r:"砲",b:"炮"},
- P:{r:"兵",b:"卒"}
-};
-let board,turn,selected,legal,history,records,flipped,ended;
-
-function newGame(){
- board=startBoard();turn="r";selected=null;legal=[];
- history=[];records=[];flipped=false;ended=false;
- draw();updateStatus("紅方先行");
- document.getElementById("history").textContent="尚未開始";
-}
-function draw(){
- ctx.clearRect(0,0,540,600);
- ctx.fillStyle="#f4d99a";ctx.fillRect(0,0,540,600);
- ctx.strokeStyle="#70421f";ctx.lineWidth=1.5;
- for(let y=0;y<10;y++){
-  ctx.beginPath();ctx.moveTo(ox,oy+y*step);ctx.lineTo(ox+8*step,oy+y*step);ctx.stroke();
- }
- for(let x=0;x<9;x++){
-  ctx.beginPath();
-  ctx.moveTo(ox+x*step,oy);ctx.lineTo(ox+x*step,oy+9*step);ctx.stroke();
- }
- // 河界
- ctx.fillStyle="#70421f";ctx.font="20px serif";ctx.textAlign="center";
- ctx.fillText("楚 河",150,oy+4.7*step);
- ctx.fillText("漢 界",390,oy+4.7*step);
-
- if(selected){
-  const p=screen(selected.x,selected.y);
-  ctx.fillStyle="#f6e58d";ctx.beginPath();
-  ctx.arc(p.x,p.y,25,0,Math.PI*2);ctx.fill();
- }
- for(const m of legal){
-  const p=screen(m.x,m.y);
-  ctx.fillStyle="#378a54";ctx.beginPath();
-  ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fill();
- }
- for(let y=0;y<10;y++)for(let x=0;x<9;x++){
-  const q=board[y][x];if(!q)continue;
-  const p=screen(x,y);
-  ctx.beginPath();ctx.arc(p.x,p.y,24,0,Math.PI*2);
-  ctx.fillStyle="#fff0cc";ctx.fill();
-  ctx.strokeStyle=q.c==="r"?"#bd2525":"#252525";
-  ctx.lineWidth=2;ctx.stroke();
-  ctx.fillStyle=q.c==="r"?"#bd2525":"#252525";
-  ctx.font="bold 25px serif";ctx.textAlign="center";ctx.textBaseline="middle";
-  ctx.fillText(names[q.t][q.c],p.x,p.y+1);
- }
-}
-function screen(x,y){
- return flipped?{x:ox+(8-x)*step,y:oy+(9-y)*step}
- :{x:ox+x*step,y:oy+y*step};
-}
-function logical(px,py){
- let x=Math.round((px-ox)/step),y=Math.round((py-oy)/step);
- if(flipped){x=8-x;y=9-y}
- return {x,y};
-}
-canvas.addEventListener("click",e=>{
- if(ended||turn!=="r")return;
- const rect=canvas.getBoundingClientRect();
- const px=(e.clientX-rect.left)*540/rect.width;
- const py=(e.clientY-rect.top)*600/rect.height;
- const {x,y}=logical(px,py);
- if(x<0||x>8||y<0||y>9)return;
- const q=board[y][x];
- if(selected&&legal.some(m=>m.x===x&&m.y===y)){
-  move(selected.x,selected.y,x,y);
-  selected=null;legal=[];draw();
-  if(!ended)setTimeout(aiMove,180);
-  return;
- }
- if(q&&q.c==="r"){
-  selected={x,y};legal=moves(x,y);draw();
- }else{
-  selected=null;legal=[];draw();
- }
-});
-function inside(x,y){return x>=0&&x<9&&y>=0&&y<10}
-function addMove(out,x,y,c){
- if(!inside(x,y))return false;
- const q=board[y][x];
- if(q&&q.c===c)return false;
- out.push({x,y});
- return !q;
-}
-function moves(x,y){
- const q=board[y][x];if(!q)return [];
- let out=[],c=q.c,dir=c==="r"?-1:1;
- const add=(a,b)=>addMove(out,a,b,c);
- if(q.t==="K"){
-  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
-   let a=x+dx,b=y+dy;
-   if(a>=3&&a<=5&&b>=(c==="r"?7:0)&&b<=(c==="r"?9:2))add(a,b);
-  }
-  // 將帥照面
-  for(let yy=y+dir;inside(x,yy);yy+=dir){
-   if(board[yy][x]){
-    if(board[yy][x].t==="K"&&board[yy][x].c!==c)out.push({x,y:yy});
-    break;
-   }
-  }
- }else if(q.t==="A"){
-  for(const [dx,dy] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
-   let a=x+dx,b=y+dy;
-   if(a>=3&&a<=5&&b>=(c==="r"?7:0)&&b<=(c==="r"?9:2))add(a,b);
-  }
- }else if(q.t==="B"){
-  for(const [dx,dy] of [[2,2],[2,-2],[-2,2],[-2,-2]]){
-   let a=x+dx,b=y+dy;
-   if(!inside(a,b))continue;
-   if(c==="r"?b<5:b>4)continue;
-   if(!board[y+dy/2][x+dx/2])add(a,b);
-  }
- }else if(q.t==="N"){
-  const jumps=[
-   [1,2,0,1],[-1,2,0,1],[1,-2,0,-1],[-1,-2,0,-1],
-   [2,1,1,0],[2,-1,1,0],[-2,1,-1,0],[-2,-1,-1,0]
-  ];
-  for(const [dx,dy,lx,ly] of jumps){
-   const a=x+dx,b=y+dy;
-   if(inside(a,b)&&!board[y+ly][x+lx])add(a,b);
-  }
- }else if(q.t==="R"||q.t==="C"){
-  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
-   let a=x+dx,b=y+dy,screened=false;
-   while(inside(a,b)){
-    const target=board[b][a];
-    if(q.t==="R"){
-     if(!target){out.push({x:a,y:b})}
-     else{if(target.c!==c)out.push({x:a,y:b});break}
-    }else{
-     if(!screened){
-      if(!target)out.push({x:a,y:b});
-      else screened=true;
-     }else if(target){
-      if(target.c!==c)out.push({x:a,y:b});
-      break;
-     }
-    }
-    a+=dx;b+=dy;
-   }
-  }
- }else if(q.t==="P"){
-  add(x,y+dir);
-  if(c==="r"?y<=4:y>=5){add(x-1,y);add(x+1,y)}
- }
- return out;
-}
-function move(x,y,a,b){
- const piece=board[y][x],captured=board[b][a];
- records.push({
-  board:board.map(row=>row.map(p=>p?{...p}:null)),
-  turn,history:history.slice(),ended
- });
- board[b][a]=piece;board[y][x]=null;
- history.push((piece.c==="r"?"紅":"黑")+names[piece.t][piece.c]+
-  "："+String.fromCharCode(65+x)+(10-y)+" → "+
-  String.fromCharCode(65+a)+(10-b));
- turn=turn==="r"?"b":"r";
- if(captured&&captured.t==="K"){
-  ended=true;updateStatus((piece.c==="r"?"紅方":"黑方")+"獲勝！");
- }else{
-  updateStatus(turn==="r"?"紅方回合":"黑方思考中…");
- }
- document.getElementById("history").textContent=history.join("\n");
-}
-function undo(){
- if(records.length===0)return;
- // 悔棋時若輪到黑方，連同電腦上一手一起復原
- let count=turn==="r"?2:1;
- while(count-->0&&records.length){
-  const r=records.pop();board=r.board;turn=r.turn;
-  history=r.history;ended=r.ended;
- }
- selected=null;legal=[];draw();
- updateStatus(turn==="r"?"紅方回合":"黑方回合");
- document.getElementById("history").textContent=history.join("\n")||"尚未開始";
-}
-function flipBoard(){flipped=!flipped;draw()}
-function updateStatus(s){document.getElementById("status").textContent=s}
-function hint(){
- if(turn!=="r"||ended)return;
- let all=[];
- for(let y=0;y<10;y++)for(let x=0;x<9;x++){
-  if(board[y][x]&&board[y][x].c==="r")
-   for(const m of moves(x,y))all.push({x,y,...m});
- }
- if(!all.length)return;
- const m=all[Math.floor(Math.random()*all.length)];
- selected={x:m.x,y:m.y};legal=moves(m.x,m.y);draw();
- updateStatus("提示：選擇高亮棋子，再點綠點");
-}
-function aiMove(){
- if(ended||turn!=="b")return;
- let all=[];
- for(let y=0;y<10;y++)for(let x=0;x<9;x++){
-  if(board[y][x]&&board[y][x].c==="b")
-   for(const m of moves(x,y))all.push({x,y,...m});
- }
- if(!all.length){ended=true;updateStatus("黑方無可走棋步");return}
- const depth=Number(document.getElementById("difficulty").value);
- all.sort((a,b)=>moveScore(b)-moveScore(a));
- let best=all.slice(0,Math.min(all.length,depth===1?12:depth===2?20:30));
- // 淺層搜尋加上隨機性，避免每次都走同一步
- let chosen=best[0],score=-Infinity;
- for(const m of best){
-  const piece=board[m.y][m.x],captured=board[m.b][m.a];
-  board[m.b][m.a]=piece;board[m.y][m.x]=null;
-  let s=evaluate();
-  if(captured)s+=value(captured.t)*1.1;
-  if(depth>=2){
-   turn="r";
-   let reply=0;
-   outer:for(let y=0;y<10;y++)for(let x=0;x<9;x++){
-    if(board[y][x]&&board[y][x].c==="r"){
-     for(const r of moves(x,y)){
-      const old=board[r.y][r.x];
-      if(old)reply=Math.max(reply,value(old.t));
-     }
-    }
-    if(reply>0)break outer;
-   }
-   s-=reply*(depth===3?0.7:0.4);
-   turn="b";
-  }
-  s+=Math.random()*3;
-  board[m.y][m.x]=captured||null;board[m.x===m.a?m.y:m.y][m.x]=piece;
-  // 恢復原始棋盤
-  board[m.y][m.x]=piece;board[m.b][m.a]=captured||null;
-  if(s>score){score=s;chosen=m}
- }
- move(chosen.x,chosen.y,chosen.a,chosen.b);
- draw();
-}
-function value(t){return {K:10000,R:900,C:450,N:400,B:200,A:200,P:100}[t]||0}
-function moveScore(m){
- const target=board[m.b][m.a];
- return (target?value(target.t)*10:0)+Math.random()*10;
-}
-function evaluate(){
- let s=0;
- for(let y=0;y<10;y++)for(let x=0;x<9;x++){
-  const p=board[y][x];if(!p)continue;
-  let v=value(p.t);
-  if(p.t==="P")v+=p.c==="r"?(9-y)*5:y*5;
-  s+=p.c==="b"?v:-v;
- }
- return s;
-}
-newGame();
-</script>
-</body>
-</html>
